@@ -106,10 +106,7 @@ namespace Auth.Controllers
         {
             return View();
         }
-        public IActionResult Welcome()
-        {
-            return View();
-        }
+       
         [HttpPost]
         public IActionResult Register(Users input)
         {
@@ -165,9 +162,10 @@ namespace Auth.Controllers
                     claims: claims
                 );
                 var tokenString = new JwtSecurityTokenHandler().WriteToken(token);
+                HttpContext.Session.SetString("JWTToken", tokenString);
 
                 // If the response is successful, redirect to the "Welcome" page
-                return Ok(tokenString);
+                //return Ok(tokenString);
                     return RedirectToAction("Welcome");
                 
             }
@@ -182,6 +180,28 @@ namespace Auth.Controllers
                 TempData["Message"] = "User is not registered. Please register first.";
                 return RedirectToAction("Register"); // Assuming you have a "Register" action
             }
+        }
+
+        public IActionResult Welcome()
+        {
+            // Retrieve the JWT token from the session
+            var tokenString = HttpContext.Session.GetString("JWTToken");
+            if (!string.IsNullOrEmpty(tokenString))
+            {
+                // Decode the JWT token to access its claims
+                var tokenHandler = new JwtSecurityTokenHandler();
+                var token = tokenHandler.ReadJwtToken(tokenString);
+
+                // Retrieve the email claim from the token
+                var emailClaim = token.Claims.FirstOrDefault(claim => claim.Type == ClaimTypes.Name);
+
+
+                // Pass the email to the view
+                ViewBag.Email = emailClaim.Value;
+               
+            }
+
+            return View();
         }
     }
 }
